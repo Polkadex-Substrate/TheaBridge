@@ -1,9 +1,8 @@
-use crate::traits::{EvmDeposit, Message, ObEvmDeposit, TheaMessage};
+use crate::traits::{EvmDeposit, ObEvmDeposit, TheaMessage, VerificationMode};
 use ethers::abi::{Address, Contract, Token};
-use ethers::contract::stream::EventStream;
 use ethers::contract::Contract as ContractType;
 use ethers::middleware::SignerMiddleware;
-use ethers::prelude::{Http, LocalWallet, Middleware, Signer, TransactionRequest};
+use ethers::prelude::{LocalWallet, Middleware, Signer, TransactionRequest};
 use ethers::providers::Ws;
 use ethers::{
     contract::abigen,
@@ -12,6 +11,9 @@ use ethers::{
 };
 use std::sync::Arc;
 use tokio::sync::mpsc::UnboundedSender;
+use vrf::openssl::CipherSuite;
+use vrf::openssl::ECVRF;
+use vrf::VRF;
 
 abigen!(
     AggregatorInterface,
@@ -34,6 +36,8 @@ pub struct EvmClient {
     contract: Contract,
     wallet: LocalWallet,
     contract_address: Address,
+    verification_mode: VerificationMode,
+    vrf_secret_key: Vec<u8>,
 }
 
 impl EvmClient {
@@ -42,6 +46,8 @@ impl EvmClient {
         contract: Contract,
         seed: String,
         contract_address: String,
+        verification_mode: VerificationMode,
+        vrf_seed: String,
     ) -> Self {
         let provider = Provider::<Ws>::connect(
             "wss://sepolia.infura.io/ws/v3/93554318ae184575adc64c64e2aa7e0c",
@@ -55,7 +61,17 @@ impl EvmClient {
             contract,
             wallet,
             contract_address: contract_address.parse().unwrap(),
+            verification_mode,
+            vrf_secret_key: hex::decode(vrf_seed).unwrap(),
         }
+    }
+
+    /// Returns a set of random bytes to be used and proof
+    pub fn generate_vrf_randomness(&self, message: &Vec<u8>) -> (Vec<u8>, Vec<u8>) {
+        let mut vrf = ECVRF::from_suite(CipherSuite::SECP256K1_SHA256_TAI).unwrap();
+        let pi = vrf.prove(&self.vrf_secret_key, message).unwrap();
+        let hash = vrf.proof_to_hash(&pi).unwrap();
+        (hash, pi)
     }
 
     pub async fn subscribe_deposit_events_stream(
@@ -108,6 +124,14 @@ impl EvmClient {
         &self,
         message: Vec<u8>,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        match self.verification_mode {
+            VerificationMode::Relayer => {}
+            VerificationMode::VRF => {
+                let (randomness, proof) = self.generate_vrf_randomness(&message);
+                // TODO: @ZK, Use the randomness as you see fit for the smart contract
+            }
+        }
+
         let signature = Token::Bytes(
             self.wallet
                 .sign_message(message.clone())

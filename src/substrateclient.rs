@@ -1,14 +1,10 @@
 use crate::traits::{EvmDeposit, ObEvmDeposit, TheaMessage};
-use ethers::utils::{hex, keccak256};
 use parity_scale_codec::{Decode, Encode};
 use subxt::config::SubstrateConfig;
-use subxt::dynamic::Value;
 use subxt::utils::H256;
-use subxt::{Config, OnlineClient, PolkadotConfig};
+use subxt::OnlineClient;
 use subxt_signer::ecdsa::{Keypair, Seed, Signature};
 use thea_primitives::ethereum::{EthereumOP, EtherumAction};
-use thea_primitives::types::Deposit;
-use thea_primitives::Message;
 use tokio::sync::mpsc::UnboundedSender;
 
 #[subxt::subxt(runtime_metadata_path = "src/metadata.scale")]

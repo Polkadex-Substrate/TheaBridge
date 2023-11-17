@@ -1,5 +1,6 @@
 use crate::evmclient::EvmClient;
 use crate::substrateclient::SubstrateClient;
+use crate::traits::VerificationMode;
 use ethers::abi::{ethabi, Contract};
 use std::path::PathBuf;
 
@@ -17,6 +18,8 @@ pub struct Builder<Url, ContractFile, SeedString, ContractAddress> {
     contract: ContractFile,
     seed: SeedString,
     contract_address: ContractAddress,
+    vrf_seed: String,
+    mode: VerificationMode,
 }
 
 impl Default for Builder<NoDestinationChain, NoContract, NoSeed, NoTheaContractAddress> {
@@ -26,6 +29,8 @@ impl Default for Builder<NoDestinationChain, NoContract, NoSeed, NoTheaContractA
             contract: NoContract,
             seed: NoSeed,
             contract_address: NoTheaContractAddress,
+            vrf_seed: "".to_string(),
+            mode: VerificationMode::Relayer,
         }
     }
 }
@@ -42,6 +47,8 @@ impl<Url, ContractFile, SeedString, ContractAddress>
             contract: self.contract,
             seed: self.seed,
             contract_address: self.contract_address,
+            vrf_seed: self.vrf_seed,
+            mode: self.mode,
         }
     }
 
@@ -56,6 +63,8 @@ impl<Url, ContractFile, SeedString, ContractAddress>
             contract: EVMContract(log_contract),
             seed: self.seed,
             contract_address: self.contract_address,
+            vrf_seed: self.vrf_seed,
+            mode: self.mode,
         }
     }
 
@@ -65,6 +74,8 @@ impl<Url, ContractFile, SeedString, ContractAddress>
             contract: self.contract,
             seed: Seed(seed),
             contract_address: self.contract_address,
+            vrf_seed: self.vrf_seed,
+            mode: self.mode,
         }
     }
 
@@ -77,6 +88,36 @@ impl<Url, ContractFile, SeedString, ContractAddress>
             contract: self.contract,
             seed: self.seed,
             contract_address: TheaContractAddress(contract_address),
+            vrf_seed: self.vrf_seed,
+            mode: self.mode,
+        }
+    }
+
+    pub fn vrf_seed(
+        self,
+        vrf_seed: String,
+    ) -> Builder<Url, ContractFile, SeedString, ContractAddress> {
+        Builder {
+            chain_url: self.chain_url,
+            contract: self.contract,
+            seed: self.seed,
+            contract_address: self.contract_address,
+            vrf_seed,
+            mode: self.mode,
+        }
+    }
+
+    pub fn mode(
+        self,
+        mode: VerificationMode,
+    ) -> Builder<Url, ContractFile, SeedString, ContractAddress> {
+        Builder {
+            chain_url: self.chain_url,
+            contract: self.contract,
+            seed: self.seed,
+            contract_address: self.contract_address,
+            vrf_seed: self.vrf_seed,
+            mode,
         }
     }
 }
@@ -88,12 +129,15 @@ impl Builder<DestinationChain, EVMContract, Seed, TheaContractAddress> {
             self.contract.0,
             self.seed.0,
             self.contract_address.0,
+            self.mode,
+            self.vrf_seed,
         )
         .await
     }
 }
 
-impl Builder<DestinationChain, NoContract, NoSeed, NoTheaContractAddress> { //FIXME: Take seed while building
+impl Builder<DestinationChain, NoContract, NoSeed, NoTheaContractAddress> {
+    //FIXME: Take seed while building
     pub async fn build(self) -> SubstrateClient {
         SubstrateClient::initialize(self.chain_url.0).await.unwrap()
     }

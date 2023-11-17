@@ -72,3 +72,23 @@ impl<T> Channel<T> {
         self.sender.clone()
     }
 }
+
+#[derive(Debug, Clone)]
+pub enum VerificationMode {
+    Relayer,
+    VRF,
+}
+
+// any error type implementing Display is acceptable.
+type ParseError = &'static str;
+
+impl std::str::FromStr for VerificationMode {
+    type Err = ParseError;
+    fn from_str(mode: &str) -> Result<Self, Self::Err> {
+        match mode {
+            "relayer" => Ok(VerificationMode::Relayer),
+            "vrf" => Ok(VerificationMode::VRF),
+            _ => Err("Could not parse the verification mode"),
+        }
+    }
+}

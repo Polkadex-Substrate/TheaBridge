@@ -1,7 +1,7 @@
 use crate::builder::Builder;
 use crate::cli::Cli;
-use structopt::StructOpt;
 use crate::relayer::RelayerBuilder;
+use structopt::StructOpt;
 
 mod builder;
 mod cli;
@@ -18,12 +18,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .contract_address(opt.thea_contract_address)
         .seed(opt.seed)
         .contract(opt.thea_contract)
+        .vrf_seed(opt.vrf_seed)
+        .mode(opt.verification_mode)
         .build()
         .await;
-    let substrate_client = Builder::default()
-        .chain_url(opt.sub_url)
-        .build()
-        .await;
+    let substrate_client = Builder::default().chain_url(opt.sub_url).build().await;
     let mut relayer = RelayerBuilder::default()
         .evm_client(evm_client)
         .substrate_client(substrate_client)

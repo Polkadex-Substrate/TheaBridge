@@ -1,6 +1,6 @@
 use crate::evmclient::EvmClient;
 use crate::substrateclient::SubstrateClient;
-use crate::traits::{Channel, EvmDeposit, TheaMessage};
+use crate::traits::{Channel, TheaMessage};
 
 pub struct NoEvmClient;
 pub struct EvmClientA(EvmClient);
@@ -97,6 +97,5 @@ impl Relayer {
                 }
             }
         }
-        Ok(())
     }
 }

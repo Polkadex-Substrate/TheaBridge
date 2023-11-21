@@ -1835,6 +1835,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "env_logger"
+version = "0.8.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a19187fea3ac7e84da7dacf48de0c45d63c6a76f9490dae389aead16c243fce3"
+dependencies = [
+ "atty",
+ "humantime",
+ "log",
+ "regex",
+ "termcolor",
+]
+
+[[package]]
 name = "environmental"
 version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2882,6 +2895,12 @@ name = "httpdate"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
+
+[[package]]
+name = "humantime"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "hyper"
@@ -4057,7 +4076,6 @@ checksum = "14e6ab3f592e6fb464fc9712d8d6e6912de6473954635fd76a589d832cffcbb0"
 [[package]]
 name = "polkadex-primitives"
 version = "1.1.0"
-source = "git+https://github.com/Polkadex-Substrate/Polkadex.git?branch=gj/upgrade-thea#dcf199184e3edabdc98ea78801c8a54b70c05e64"
 dependencies = [
  "anyhow",
  "frame-support",
@@ -4482,6 +4500,7 @@ checksum = "c08c74e62047bb2de4ff487b251e4a92e24f48745648451635cec7d591162d9f"
 name = "relayer"
 version = "0.1.0"
 dependencies = [
+ "env_logger",
  "ethers",
  "futures",
  "k256",
@@ -6335,7 +6354,6 @@ dependencies = [
 [[package]]
 name = "thea-primitives"
 version = "1.1.0"
-source = "git+https://github.com/Polkadex-Substrate/Polkadex.git?branch=gj/upgrade-thea#dcf199184e3edabdc98ea78801c8a54b70c05e64"
 dependencies = [
  "frame-support",
  "hex",

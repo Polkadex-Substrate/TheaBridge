@@ -93,7 +93,8 @@ impl Builder<DestinationChain, EVMContract, Seed, TheaContractAddress> {
     }
 }
 
-impl Builder<DestinationChain, NoContract, NoSeed, NoTheaContractAddress> { //FIXME: Take seed while building
+impl Builder<DestinationChain, NoContract, NoSeed, NoTheaContractAddress> {
+    //FIXME: Take seed while building
     pub async fn build(self) -> SubstrateClient {
         SubstrateClient::initialize(self.chain_url.0).await.unwrap()
     }

@@ -1,6 +1,5 @@
-use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
-//Import encode
 use parity_scale_codec::Encode;
+use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 
 pub trait Message {
     type UnprocessedTheaMessage;

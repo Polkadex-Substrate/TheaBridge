@@ -1,9 +1,10 @@
 use crate::traits::{EvmDeposit, ObEvmDeposit, TheaMessage};
 use ethers::utils::{hex, keccak256};
 use parity_scale_codec::{Decode, Encode};
+use sp_core::hashing::sha2_256;
 use subxt::config::SubstrateConfig;
 use subxt::dynamic::Value;
-use subxt::utils::H256;
+use subxt::utils::{AccountId32, H256};
 use subxt::{Config, OnlineClient, PolkadotConfig};
 use subxt_signer::ecdsa::{Keypair, Seed, Signature};
 use thea_primitives::ethereum::{EthereumOP, EtherumAction};
@@ -42,7 +43,7 @@ impl SubstrateClient {
         &self,
         deposit: EvmDeposit,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let network_id = 1u8; //TODO: Config network Id
+        let network_id = 2u8; //TODO: Config network Id
         let incoming_nonce_query =
             subxt::dynamic::storage("Thea", "IncomingNonce", vec![network_id]);
         let incoming_nonce = self
@@ -55,26 +56,34 @@ impl SubstrateClient {
             .unwrap()
             .into_encoded();
         let incoming_nonce: u64 = Decode::decode(&mut &incoming_nonce[..]).unwrap();
-        let deposit = EtherumAction::Deposit(deposit.asset_id, deposit.amount, deposit.recipient);
+        // convert Vec<u8> to [u8;32]
+        let recipient_add: [u8; 32] = deposit.recipient.try_into().unwrap();
+        let recipient_add: AccountId32 = AccountId32::from(recipient_add);
+        let deposit = EtherumAction::Deposit(deposit.asset_id, deposit.amount, recipient_add);
         let evm_op = EthereumOP {
             txn_id: Default::default(),
             action: deposit,
         };
         let message = polkadex::runtime_types::thea_primitives::types::Message {
             block_no: 0,
-            nonce: incoming_nonce,
-            data: evm_op.encode(),
-            network: 0,
-            is_key_change: false,
+            nonce: incoming_nonce.saturating_add(1),
+            network: network_id,
             validator_set_id: 0,
+            payload_type: polkadex::runtime_types::thea_primitives::types::PayloadType::L1Deposit,
+            data: evm_op.encode(),
         };
-        let signature: Signature = self.signer.sign(&mut &message.encode());
+        let message_hash = sha2_256(&message.encode());
+        let signature: Signature = self.signer.sign(&mut &message_hash[..]);
         let signature = sp_core::ecdsa::Signature(signature.0);
-        //let signature: polkadex::runtime_types::thea::ecdsa::app_ecdsa::Signature = polkadex::runtime_types::thea::ecdsa::app_ecdsa::Signature(polkadex::runtime_types::sp_core::ecdsa::Signature(signature.0));
         let signature = Decode::decode(&mut &signature.encode()[..]).unwrap();
-        let thea_deposit_tx = polkadex::tx()
-            .thea()
-            .incoming_message(message, vec![(1u16, signature)]);
+        let thea_deposit_tx = polkadex::tx().thea().incoming_message(message, signature);
+        let result = self
+            .client
+            .tx()
+            .create_unsigned(&thea_deposit_tx)
+            .unwrap()
+            .submit()
+            .await?;
         Ok(())
     }
 
@@ -92,8 +101,9 @@ impl SubstrateClient {
             .iter(storage_query)
             .await?;
         while let Some(Ok((_, value))) = results.next().await {
+            let value_mes: Message = Decode::decode(&mut &value.into_encoded()[..]).unwrap();
             sender
-                .send(TheaMessage::SubstrateMessage(value.into_encoded()))
+                .send(TheaMessage::SubstrateMessage(value_mes.encode()))
                 .unwrap();
         }
         Ok(())
@@ -103,7 +113,7 @@ impl SubstrateClient {
         &self,
         deposit: ObEvmDeposit,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let network_id = 1u8; //TODO: Config network Id
+        let network_id = 2u8; //TODO: Config network Id
         let incoming_nonce_query =
             subxt::dynamic::storage("Thea", "IncomingNonce", vec![network_id]);
         let incoming_nonce = self
@@ -130,16 +140,14 @@ impl SubstrateClient {
             block_no: 0,
             nonce: incoming_nonce,
             data: evm_op.encode(),
-            network: 0,
-            is_key_change: false,
+            network: 1,
+            payload_type: polkadex::runtime_types::thea_primitives::types::PayloadType::L1Deposit,
             validator_set_id: 0,
         };
         let signature: Signature = self.signer.sign(&mut &message.encode());
         let signature = sp_core::ecdsa::Signature(signature.0);
         let signature = Decode::decode(&mut &signature.encode()[..]).unwrap();
-        let thea_deposit_tx = polkadex::tx()
-            .thea()
-            .incoming_message(message, vec![(1u16, signature)]);
+        let thea_deposit_tx = polkadex::tx().thea().incoming_message(message, signature);
         Ok(())
     }
 }

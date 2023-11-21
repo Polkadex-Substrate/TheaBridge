@@ -11,10 +11,11 @@ subxt = {git = "https://github.com/paritytech/subxt"}
 tokio = { version = "1.27", features = ["rt-multi-thread", "macros", "time"] }
 tokio-stream = { version = "0.1.12", features = ["time"] }
 futures = "0.3.13"
-thea-primitives = { git = "https://github.com/Polkadex-Substrate/Polkadex.git", branch = "gj/upgrade-thea"}
+thea-primitives = { path = "../Polkadex/primitives/thea"}
 parity-scale-codec = "3.4.0"
 k256 = "0.13.2"
 subxt-signer = "0.32.1"
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
 log = "0.4.14"
 structopt = { version = "0.3" }
+env_logger = "0.8.3"

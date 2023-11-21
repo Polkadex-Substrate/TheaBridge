@@ -3,8 +3,9 @@ use ethers::abi::{Address, Contract, Token};
 use ethers::contract::stream::EventStream;
 use ethers::contract::Contract as ContractType;
 use ethers::middleware::SignerMiddleware;
-use ethers::prelude::{Http, LocalWallet, Middleware, Signer, TransactionRequest};
+use ethers::prelude::{Http, LocalWallet, Middleware, Signer, TransactionRequest, H256};
 use ethers::providers::Ws;
+use ethers::utils::{hex, keccak256};
 use ethers::{
     contract::abigen,
     core::types::ValueOrArray,
@@ -43,12 +44,9 @@ impl EvmClient {
         seed: String,
         contract_address: String,
     ) -> Self {
-        let provider = Provider::<Ws>::connect(
-            "wss://sepolia.infura.io/ws/v3/93554318ae184575adc64c64e2aa7e0c",
-        )
-        .await
-        .unwrap();
+        let provider = Provider::<Ws>::connect(url.clone()).await.unwrap();
         let wallet: LocalWallet = seed.as_str().parse().unwrap();
+        let wallet = wallet.with_chain_id(11155111u64);
         Self {
             url,
             provider,
@@ -62,16 +60,13 @@ impl EvmClient {
         &self,
         sender: UnboundedSender<TheaMessage>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        log::info!("Subscribing to deposit events");
         let event =
             ContractType::event_of_type::<DepositEventFilter>(Arc::new(self.provider.clone()))
                 .address(ValueOrArray::Array(vec![
                     self.contract_address, //TODO: Make it part of config
                 ]));
         let mut stream = event.subscribe_with_meta().await?.take(2);
-        log::info!("Subscribed to deposit events");
         while let Some(Ok((event, meta))) = stream.next().await {
-            log::info!("Deposit event received");
             let deposit = EvmDeposit::new(
                 event.recipient.clone().to_vec(),
                 event.asset_id.clone(),
@@ -108,13 +103,12 @@ impl EvmClient {
         &self,
         message: Vec<u8>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let signature = Token::Bytes(
-            self.wallet
-                .sign_message(message.clone())
-                .await
-                .unwrap()
-                .to_vec(),
-        );
+        let mut signature = self
+            .wallet
+            .sign_hash(H256::from(keccak256(message.clone())))
+            .unwrap();
+        let signature = signature.to_vec();
+        let signature = Token::Bytes(signature);
         let message_token = Token::Bytes(message);
         let token_array = vec![message_token, signature];
         let data = self
@@ -122,11 +116,9 @@ impl EvmClient {
             .function("sendMessage")?
             .encode_input(&token_array)?;
         let tx = TransactionRequest::new();
-        let tx = tx.to(self.contract_address).data(data).chain_id(3);
+        let tx = tx.to(self.contract_address).data(data).chain_id(11155111);
         let mut client = SignerMiddleware::new(self.provider.clone(), self.wallet.clone());
-        if let Ok(pending_tx) = client.send_transaction(tx, None).await {
-            log::info!("Transaction sent: {:?}", pending_tx);
-        }
+        let pending_tx = client.send_transaction(tx, None).await.unwrap();
         Ok(())
     }
 }

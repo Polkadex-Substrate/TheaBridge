@@ -16,7 +16,7 @@ pub struct Cli {
     #[structopt(
         short = "t",
         long = "thea-contract-address",
-        default_value = "0x87185025aa4adb99adb3d06ff5764deacad91f28"
+        default_value = "0xc5C4D1D4B2bEAd517863f4969cbb38A42aD1b11C"
     )]
     pub thea_contract_address: String,
     #[structopt(
@@ -24,5 +24,5 @@ pub struct Cli {
         long = "seed",
         default_value = "c05c6ae125754dd17f36bcc5318498ce5c6c2f0e9e1116c68b77889a8be2ff02"
     )]
-    pub seed: String,
+    pub seed: String
 }

@@ -1,16 +1,19 @@
 use crate::traits::{EvmDeposit, ObEvmDeposit, TheaMessage};
 use ethers::utils::{hex, keccak256};
 use parity_scale_codec::{Decode, Encode};
+use serde::{Deserialize, Serialize};
 use sp_core::hashing::sha2_256;
 use subxt::config::SubstrateConfig;
 use subxt::dynamic::Value;
 use subxt::utils::{AccountId32, H256};
 use subxt::{Config, OnlineClient, PolkadotConfig};
 use subxt_signer::ecdsa::{Keypair, Seed, Signature};
-use thea_primitives::ethereum::{EthereumOP, EtherumAction};
-use thea_primitives::types::Deposit;
-use thea_primitives::Message;
+use subxt::config::polkadot::PolkadotExtrinsicParamsBuilder as Params;
+use subxt_signer::sr25519::dev;
+use crate::traits::{EthereumOP, EtherumAction};
+use thea_primitives::types::SignedMessage;
 use tokio::sync::mpsc::UnboundedSender;
+use crate::error::RelayerError;
 
 #[subxt::subxt(runtime_metadata_path = "src/metadata.scale")]
 pub mod polkadex {}
@@ -22,10 +25,12 @@ pub struct SubstrateClient {
 }
 
 impl SubstrateClient {
-    pub async fn initialize(url: String) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn initialize(url: String) -> Result<Self, RelayerError> {
         let api = OnlineClient::<SubstrateConfig>::from_url(url).await?;
         let seed: Seed = Seed::from(H256::from_low_u64_be(10));
-        let signer = subxt_signer::ecdsa::Keypair::from_seed(seed).unwrap();
+        let signer = subxt_signer::ecdsa::Keypair::from_seed(seed)?;
+        let public_key = signer.public_key();
+        println!("Public Key {:?}", hex::encode(public_key));
         let update_task = api.updater();
         tokio::spawn(async move {
             update_task
@@ -42,7 +47,8 @@ impl SubstrateClient {
     pub async fn handle_deposit(
         &self,
         deposit: EvmDeposit,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), RelayerError> {
+        println!("Handling Deposit Event");
         let network_id = 2u8; //TODO: Config network Id
         let incoming_nonce_query =
             subxt::dynamic::storage("Thea", "IncomingNonce", vec![network_id]);
@@ -53,46 +59,52 @@ impl SubstrateClient {
             .await?
             .fetch(&incoming_nonce_query)
             .await?
-            .unwrap()
+            .ok_or(RelayerError::UnableToFetchIncomingNonce)?
             .into_encoded();
-        let incoming_nonce: u64 = Decode::decode(&mut &incoming_nonce[..]).unwrap();
+        let incoming_nonce: u64 = Decode::decode(&mut &incoming_nonce[..])?;
         // convert Vec<u8> to [u8;32]
-        let recipient_add: [u8; 32] = deposit.recipient.try_into().unwrap();
+        let recipient_add: [u8; 32] = deposit.recipient.try_into().map_err(|_| RelayerError::FailedToConvertAddress)?;
         let recipient_add: AccountId32 = AccountId32::from(recipient_add);
-        let deposit = EtherumAction::Deposit(deposit.asset_id, deposit.amount, recipient_add);
-        let evm_op = EthereumOP {
-            txn_id: Default::default(),
-            action: deposit,
+        let deposit = thea_primitives::types::Deposit {
+            id: Default::default(),
+            recipient: recipient_add,
+            asset_id: deposit.asset_id,
+            amount: deposit.amount,
+            extra: Default::default(),
         };
+        let deposit_vec = vec![deposit];
         let message = polkadex::runtime_types::thea_primitives::types::Message {
             block_no: 0,
-            nonce: incoming_nonce.saturating_add(1),
+            nonce: incoming_nonce,
             network: network_id,
-            validator_set_id: 0,
+            data: deposit_vec.encode(),
             payload_type: polkadex::runtime_types::thea_primitives::types::PayloadType::L1Deposit,
-            data: evm_op.encode(),
         };
-        let message_hash = sha2_256(&message.encode());
-        let signature: Signature = self.signer.sign(&mut &message_hash[..]);
-        let signature = sp_core::ecdsa::Signature(signature.0);
-        let signature = Decode::decode(&mut &signature.encode()[..]).unwrap();
-        let thea_deposit_tx = polkadex::tx().thea().incoming_message(message, signature);
+        let thea_deposit_tx = polkadex::tx().thea().submit_incoming_message(message, 1u128);
+        let from = dev::alice(); //TODO: Change it to Signer
+        let latest_block = self.client.blocks().at_latest().await?;
+        let tx_params = Params::new()
+            .tip(1_000)
+            .mortal(latest_block.header(), 32)
+            .build();
         let result = self
             .client
             .tx()
-            .create_unsigned(&thea_deposit_tx)
-            .unwrap()
-            .submit()
+            .sign_and_submit(&thea_deposit_tx, &from, tx_params)
             .await?;
+        println!("Deposit Transaction {:?}", result);
         Ok(())
     }
 
     pub async fn subscribe_substrate_event_stream(
         &self,
         sender: UnboundedSender<TheaMessage>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let keys = Vec::<()>::new();
-        let storage_query = subxt::dynamic::storage("Thea", "OutgoingMessages", keys);
+    ) -> Result<(), RelayerError> {
+        let network_id = 2u8; //TODO: Config network Id
+        // Fetch Outgoing nonce
+        //OutgoingNonce
+        println!("Subscribing to Withdrawal Events");
+        let storage_query = subxt::dynamic::storage("Thea", "SignedOutgoingNonce", vec![network_id]);
         let mut results = self
             .client
             .storage()
@@ -101,10 +113,26 @@ impl SubstrateClient {
             .iter(storage_query)
             .await?;
         while let Some(Ok((_, value))) = results.next().await {
-            let value_mes: Message = Decode::decode(&mut &value.into_encoded()[..]).unwrap();
-            sender
-                .send(TheaMessage::SubstrateMessage(value_mes.encode()))
-                .unwrap();
+            let value_nonce: u64 = Decode::decode(&mut &value.into_encoded()[..])?;
+            println!("Withdrawal Nonce {:?}", value_nonce);
+            //TODO Check if nonce is greater than what was processed lat time
+            let storage_query = polkadex::storage().thea().signed_outgoing_messages(network_id, value_nonce);
+            if let Some(result) = self.client
+                .storage()
+                .at_latest()
+                .await?
+                .fetch(&storage_query)
+                .await? {
+                println!("Message found {:?}", result);
+                let message: SignedMessage<sp_core::ecdsa::Signature> = Decode::decode(&mut &result.encode()[..])?;
+                //Convert BTreeMap to Vec<(a,b)>
+                let signatures: Vec<(u32, sp_core::ecdsa::Signature)> = message.signatures.into_iter().map(|(a,b)| (a,b)).collect();
+                println!("Message {:?}", hex::encode(message.message.encode().clone()));
+                // Send message using channel
+                sender.send(TheaMessage::SubstrateMessageWithProof(message.message.encode(), signatures))?;
+                // Process Message and send it to Ethereum
+            }
+
         }
         Ok(())
     }
@@ -112,7 +140,7 @@ impl SubstrateClient {
     pub async fn handle_ob_deposit(
         &self,
         deposit: ObEvmDeposit,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), RelayerError> {
         let network_id = 2u8; //TODO: Config network Id
         let incoming_nonce_query =
             subxt::dynamic::storage("Thea", "IncomingNonce", vec![network_id]);
@@ -123,31 +151,26 @@ impl SubstrateClient {
             .await?
             .fetch(&incoming_nonce_query)
             .await?
-            .unwrap()
+            .ok_or(RelayerError::UnableToFetchIncomingNonce)?
             .into_encoded();
-        let incoming_nonce: u64 = Decode::decode(&mut &incoming_nonce[..]).unwrap();
-        let deposit = EtherumAction::DepositToOrderbook(
-            deposit.asset_id,
-            deposit.amount,
-            deposit.main_account,
-            deposit.trading_account,
-        );
-        let evm_op = EthereumOP {
-            txn_id: Default::default(),
-            action: deposit,
+        let incoming_nonce: u64 = Decode::decode(&mut &incoming_nonce[..])?;
+        let deposit = thea_primitives::types::Deposit {
+            id: Default::default(),
+            recipient: deposit.main_account,
+            asset_id: deposit.asset_id,
+            amount: deposit.amount,
+            extra: Default::default(),
         };
+        let deposit_vec = vec![deposit];
         let message = polkadex::runtime_types::thea_primitives::types::Message {
             block_no: 0,
             nonce: incoming_nonce,
-            data: evm_op.encode(),
+            data: deposit_vec.encode(),
             network: 1,
             payload_type: polkadex::runtime_types::thea_primitives::types::PayloadType::L1Deposit,
-            validator_set_id: 0,
         };
-        let signature: Signature = self.signer.sign(&mut &message.encode());
-        let signature = sp_core::ecdsa::Signature(signature.0);
-        let signature = Decode::decode(&mut &signature.encode()[..]).unwrap();
-        let thea_deposit_tx = polkadex::tx().thea().incoming_message(message, signature);
+        let thea_deposit_tx = polkadex::tx().thea().submit_incoming_message(message, 1u128);
+        println!("Submitting Deposit to Substrate {:?}", thea_deposit_tx);
         Ok(())
     }
 }

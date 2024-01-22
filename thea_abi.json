@@ -2,22 +2,6 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint256[2]",
-				"name": "_vrf_public_key",
-				"type": "uint256[2]"
-			},
-			{
-				"internalType": "address",
-				"name": "_relayer",
-				"type": "address"
-			}
-		],
-		"stateMutability": "payable",
-		"type": "constructor"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "address",
 				"name": "target",
 				"type": "address"
@@ -38,8 +22,39 @@
 		"type": "error"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "implementation",
+				"type": "address"
+			}
+		],
+		"name": "ERC1967InvalidImplementation",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "ERC1967NonPayable",
+		"type": "error"
+	},
+	{
 		"inputs": [],
 		"name": "FailedInnerCall",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "InvalidInitialization",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "NotInitializing",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "ReentrancyGuardReentrantCall",
 		"type": "error"
 	},
 	{
@@ -54,17 +69,20 @@
 		"type": "error"
 	},
 	{
-		"anonymous": false,
+		"inputs": [],
+		"name": "UUPSUnauthorizedCallContext",
+		"type": "error"
+	},
+	{
 		"inputs": [
 			{
-				"indexed": false,
-				"internalType": "address[]",
-				"name": "councilMembers",
-				"type": "address[]"
+				"internalType": "bytes32",
+				"name": "slot",
+				"type": "bytes32"
 			}
 		],
-		"name": "CouncilRotated",
-		"type": "event"
+		"name": "UUPSUnsupportedProxiableUUID",
+		"type": "error"
 	},
 	{
 		"anonymous": false,
@@ -128,59 +146,24 @@
 			{
 				"indexed": false,
 				"internalType": "uint64",
-				"name": "message_id",
+				"name": "version",
+				"type": "uint64"
+			}
+		],
+		"name": "Initialized",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint64",
+				"name": "nonce",
 				"type": "uint64"
 			}
 		],
 		"name": "MessageProcessed",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "enum Ds.Mode",
-				"name": "mode",
-				"type": "uint8"
-			}
-		],
-		"name": "ModeSwitched",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"components": [
-					{
-						"internalType": "uint64",
-						"name": "palletId",
-						"type": "uint64"
-					},
-					{
-						"internalType": "uint64",
-						"name": "extId",
-						"type": "uint64"
-					},
-					{
-						"internalType": "uint64",
-						"name": "nonceId",
-						"type": "uint64"
-					},
-					{
-						"internalType": "bytes",
-						"name": "data",
-						"type": "bytes"
-					}
-				],
-				"indexed": false,
-				"internalType": "struct Ds.TheaEvent",
-				"name": "theaEvent",
-				"type": "tuple"
-			}
-		],
-		"name": "TheaTransaction",
 		"type": "event"
 	},
 	{
@@ -206,19 +189,13 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
-				"internalType": "address[]",
-				"name": "validators",
-				"type": "address[]"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "epoch_id",
-				"type": "uint256"
+				"indexed": true,
+				"internalType": "address",
+				"name": "implementation",
+				"type": "address"
 			}
 		],
-		"name": "ValidatorsRotated",
+		"name": "Upgraded",
 		"type": "event"
 	},
 	{
@@ -241,17 +218,17 @@
 		"type": "event"
 	},
 	{
-		"anonymous": false,
-		"inputs": [
+		"inputs": [],
+		"name": "UPGRADE_INTERFACE_VERSION",
+		"outputs": [
 			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "relayer",
-				"type": "address"
+				"internalType": "string",
+				"name": "",
+				"type": "string"
 			}
 		],
-		"name": "printRelayerAddress",
-		"type": "event"
+		"stateMutability": "view",
+		"type": "function"
 	},
 	{
 		"inputs": [
@@ -292,19 +269,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "blockDelay",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "uint64",
@@ -338,25 +302,6 @@
 		"name": "claimWithdrawal",
 		"outputs": [],
 		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "councilMembers",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -425,12 +370,12 @@
 	},
 	{
 		"inputs": [],
-		"name": "getClaimableBlock",
+		"name": "getIndexes",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "uint64[]",
 				"name": "",
-				"type": "uint256"
+				"type": "uint64[]"
 			}
 		],
 		"stateMutability": "view",
@@ -450,19 +395,13 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_address",
-				"type": "address"
-			}
-		],
-		"name": "isActiveCouncilMember",
+		"inputs": [],
+		"name": "indexSize",
 		"outputs": [
 			{
-				"internalType": "bool",
+				"internalType": "uint64",
 				"name": "",
-				"type": "bool"
+				"type": "uint64"
 			}
 		],
 		"stateMutability": "view",
@@ -471,17 +410,44 @@
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "_manager",
+				"type": "address"
+			},
+			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "_validatorSetId",
 				"type": "uint256"
+			},
+			{
+				"internalType": "bytes[]",
+				"name": "_validators",
+				"type": "bytes[]"
+			},
+			{
+				"internalType": "uint64",
+				"name": "_indexSize",
+				"type": "uint64"
+			},
+			{
+				"internalType": "uint64[]",
+				"name": "_validatorsIndexForVerification",
+				"type": "uint64[]"
 			}
 		],
-		"name": "messages",
+		"name": "initialize",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "latestValidatorSetId",
 		"outputs": [
 			{
-				"internalType": "bytes",
+				"internalType": "uint64",
 				"name": "",
-				"type": "bytes"
+				"type": "uint64"
 			}
 		],
 		"stateMutability": "view",
@@ -489,12 +455,12 @@
 	},
 	{
 		"inputs": [],
-		"name": "mode",
+		"name": "nextValidatorSetId",
 		"outputs": [
 			{
-				"internalType": "enum Ds.Mode",
+				"internalType": "uint64",
 				"name": "",
-				"type": "uint8"
+				"type": "uint64"
 			}
 		],
 		"stateMutability": "view",
@@ -564,12 +530,12 @@
 	},
 	{
 		"inputs": [],
-		"name": "relayer",
+		"name": "proxiableUUID",
 		"outputs": [
 			{
-				"internalType": "address",
+				"internalType": "bytes32",
 				"name": "",
-				"type": "address"
+				"type": "bytes32"
 			}
 		],
 		"stateMutability": "view",
@@ -583,9 +549,9 @@
 				"type": "bytes"
 			},
 			{
-				"internalType": "bytes",
+				"internalType": "bytes[]",
 				"name": "signature",
-				"type": "bytes"
+				"type": "bytes[]"
 			}
 		],
 		"name": "sendMessage",
@@ -622,6 +588,24 @@
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "newImplementation",
+				"type": "address"
+			},
+			{
+				"internalType": "bytes",
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "upgradeToAndCall",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
@@ -651,12 +635,12 @@
 				"type": "uint256"
 			}
 		],
-		"name": "vrf_public_key",
+		"name": "validatorsIndexForVerification",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "uint64",
 				"name": "",
-				"type": "uint256"
+				"type": "uint64"
 			}
 		],
 		"stateMutability": "view",

@@ -15,6 +15,8 @@ use ethers::{
 use std::sync::Arc;
 use ethers::types::H160;
 use sp_application_crypto::RuntimeAppPublic;
+use sp_core::U256;
+use thea_primitives::ValidatorSetId;
 use tokio::sync::mpsc::UnboundedSender;
 use vrf::openssl::{CipherSuite, ECVRF};
 use vrf::VRF;
@@ -139,25 +141,38 @@ impl EvmClient {
         Ok(())
     }
 
-    pub async fn handle_substrate_message_with_proof(&self, message: Vec<u8>, signatures: Vec<(u32, sp_core::ecdsa::Signature)>) -> Result<(), RelayerError> {
+    pub async fn get_validator_index(&self, message: Vec<u8>, validator_set_id: u64, indexes: Vec<u64>) -> Result<Vec<u64>, RelayerError> {
+        let indexes: Vec<u64> = self.thea_contract.get_validator_index(message.into(), validator_set_id.into(), indexes).call().await?;
+        Ok(indexes)
+    }
+
+    pub async fn handle_substrate_message_with_proof(&self, message: Vec<u8>, validator_set_id: ValidatorSetId ,signatures: Vec<(u32, sp_core::ecdsa::Signature)>) -> Result<(), RelayerError> {
 
         println!("Got Message from Substrate");
         println!("Substrate Message is: {:?}", hex::encode(message.clone()));
-        println!("Substrate Signature is: {:?}", hex::encode(signatures[0].1.clone()));
-        //TODO Fetch Index From Contract
-        //let data = self.contract.function("validatorsIndexForVerification")?.call()?.await?;
-        //println!("Data {:?}", data);
-        let indexes: Vec<u64> = self.thea_contract.get_indexes().call().await?;
+        let signature_indexes: Vec<u64> = signatures.iter().map(|(index, _)| *index as u64).collect();
+        println!("signatue_index KSR {:?}", signature_indexes.clone());
+        let indexes: Vec<u64> = self.get_validator_index(message.clone(), validator_set_id, signature_indexes.clone()).await?;
+        println!("Indexes {:?}", indexes.clone());
         let mut final_signatures: Vec<Token> = vec![];
-        let _ = signatures.iter().map(|(index, sig)| {
-            if indexes.contains(&(*index as u64)) {
-                let sig = sig.0.to_vec();
-                final_signatures.push(Token::Bytes(sig));
+        println!("Raw Sig Len {:?}", signatures.len());
+        for i in indexes.clone() {
+            for (index, sig) in signatures.clone() {
+                if i == index as u64 {
+                    let sig = sig.0.to_vec();
+                    println!("Indexed Signature {:?}", hex::encode(sig.clone()));
+                    final_signatures.push(Token::Bytes(sig));
+                }
             }
-        });
+        }
+        println!("Final Signature Len {:?}", final_signatures.len());
+        //println!("Final Sig {:?}", final_signatures.clone());
         let signatures = Token::Array(final_signatures);
         let message_token = Token::Bytes(message);
-        let token_array = vec![message_token, signatures];
+        let signature_indexes_token: Vec<Token> = signature_indexes.iter().map(|index| Token::Uint(U256::from(*index))).collect();
+        println!("Signature Indexes Len {:?}", signature_indexes_token.len());
+        let siganture_indexes = Token::Array(signature_indexes_token);
+        let token_array = vec![message_token, signatures, siganture_indexes];
         let data = self
             .contract
             .function("sendMessage")?

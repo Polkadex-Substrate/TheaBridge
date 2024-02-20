@@ -11,18 +11,34 @@ pub struct Cli {
         default_value = "wss://sepolia.infura.io/ws/v3/93554318ae184575adc64c64e2aa7e0c"
     )]
     pub eth_url: String,
-    #[structopt(short = "p", long = "sub-url", default_value = "ws://localhost:9944")]
+    #[structopt(short = "p", long = "sub-url", default_value = "wss://polkadex-mainnet-rpc.dwellir.com:443")]
     pub sub_url: String,
     #[structopt(
         short = "t",
         long = "thea-contract-address",
-        default_value = "0xc5C4D1D4B2bEAd517863f4969cbb38A42aD1b11C"
+        default_value = "0x245d58515d26f577f8e256a3a7c50c3c2df209a3"
     )]
     pub thea_contract_address: String,
     #[structopt(
+    short = "n",
+    long = "substrate-network-id"
+    )]
+    pub substrate_network_id: u8,
+    #[structopt(
+    short = "k",
+    long = "evm-network-id"
+    )]
+    pub evn_network_id: u8,
+    #[structopt(
         short = "s",
-        long = "seed",
+        long = "evm-seed",
         default_value = "c05c6ae125754dd17f36bcc5318498ce5c6c2f0e9e1116c68b77889a8be2ff02"
     )]
-    pub seed: String
+    pub evm_seed: String,
+    #[structopt(
+    short = "p",
+    long = "sub-phase",
+    default_value = "c05c6ae125754dd17f36bcc5318498ce5c6c2f0e9e1116c68b77889a8be2ff02"
+    )]
+    pub sub_phase: String,
 }

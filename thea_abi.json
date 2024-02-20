@@ -89,6 +89,19 @@
 		"inputs": [
 			{
 				"indexed": false,
+				"internalType": "bytes32",
+				"name": "hash",
+				"type": "bytes32"
+			}
+		],
+		"name": "DDebuggerHash",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
 				"internalType": "bytes",
 				"name": "recipient",
 				"type": "bytes"
@@ -218,6 +231,19 @@
 		"type": "event"
 	},
 	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bytes",
+				"name": "address1",
+				"type": "bytes"
+			}
+		],
+		"name": "debuggerBytes",
+		"type": "event"
+	},
+	{
 		"inputs": [],
 		"name": "UPGRADE_INTERFACE_VERSION",
 		"outputs": [
@@ -228,6 +254,29 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes",
+				"name": "message",
+				"type": "bytes"
+			},
+			{
+				"internalType": "bytes",
+				"name": "signature",
+				"type": "bytes"
+			},
+			{
+				"internalType": "address",
+				"name": "validator",
+				"type": "address"
+			}
+		],
+		"name": "abcValidatorValidation",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -369,8 +418,24 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "getIndexes",
+		"inputs": [
+			{
+				"internalType": "bytes",
+				"name": "message",
+				"type": "bytes"
+			},
+			{
+				"internalType": "uint256",
+				"name": "validatorSetId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint64[]",
+				"name": "index",
+				"type": "uint64[]"
+			}
+		],
+		"name": "getValidatorIndex",
 		"outputs": [
 			{
 				"internalType": "uint64[]",
@@ -378,7 +443,7 @@
 				"type": "uint64[]"
 			}
 		],
-		"stateMutability": "view",
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -552,6 +617,11 @@
 				"internalType": "bytes[]",
 				"name": "signature",
 				"type": "bytes[]"
+			},
+			{
+				"internalType": "uint64[]",
+				"name": "signaturesIndex",
+				"type": "uint64[]"
 			}
 		],
 		"name": "sendMessage",
@@ -619,9 +689,9 @@
 		"name": "validators",
 		"outputs": [
 			{
-				"internalType": "address",
+				"internalType": "bytes",
 				"name": "",
-				"type": "address"
+				"type": "bytes"
 			}
 		],
 		"stateMutability": "view",
@@ -644,6 +714,24 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes",
+				"name": "uncompressedSigner",
+				"type": "bytes"
+			},
+			{
+				"internalType": "bytes",
+				"name": "validator",
+				"type": "bytes"
+			}
+		],
+		"name": "verifySignature",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]

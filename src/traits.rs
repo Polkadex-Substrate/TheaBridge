@@ -60,7 +60,7 @@ pub enum TheaMessage {
     EvmDeposit(EvmDeposit),
     ObEvmDeposit(ObEvmDeposit),
     SubstrateMessage(Vec<u8>),
-    SubstrateMessageWithProof(Vec<u8>, Vec<(u32, sp_core::ecdsa::Signature)>),
+    SubstrateMessageWithProof(Vec<u8>, u64, Vec<(u32, sp_core::ecdsa::Signature)>),
 }
 
 pub struct Channel<T> {

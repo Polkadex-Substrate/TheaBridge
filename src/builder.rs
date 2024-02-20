@@ -14,6 +14,9 @@ pub struct Seed(String);
 pub struct NoTheaContractAddress;
 pub struct TheaContractAddress(String);
 
+pub struct NoSubstrateNetworkId;
+pub struct SubstrateNetworkId(u8);
+
 pub struct Builder<Url, ContractFile, SeedString, ContractAddress> {
     chain_url: Url,
     contract: ContractFile,

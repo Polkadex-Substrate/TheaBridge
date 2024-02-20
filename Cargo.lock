@@ -4260,6 +4260,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-balances"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.1.0#c8d2251cafadc108ba2f1f8a3208dc547ff38901"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-timestamp"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.1.0#c8d2251cafadc108ba2f1f8a3208dc547ff38901"
@@ -5004,11 +5019,11 @@ dependencies = [
  "env_logger",
  "ethers",
  "futures",
- "hex",
  "k256",
  "log",
  "parity-scale-codec",
  "scale-info",
+ "secp256k1 0.28.1",
  "serde",
  "serde_json",
  "sled",
@@ -6989,7 +7004,9 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex",
+ "libsecp256k1",
  "log",
+ "pallet-balances",
  "pallet-timestamp",
  "parity-scale-codec",
  "polkadex-primitives",

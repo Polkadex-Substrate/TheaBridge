@@ -113,9 +113,9 @@ impl Relayer {
                         TheaMessage::SubstrateMessage(message) => {
                             evm_client.handle_substrate_message(message).await?;
                         }
-                        TheaMessage::SubstrateMessageWithProof(message, signature) => {
+                        TheaMessage::SubstrateMessageWithProof(message,validator_set_id, signature) => {
                             evm_client
-                                .handle_substrate_message_with_proof(message, signature)
+                                .handle_substrate_message_with_proof(message, validator_set_id, signature)
                                 .await?;
                         }
                     }

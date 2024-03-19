@@ -90,6 +90,7 @@ impl EvmClient {
                 event.recipient.clone().to_vec(),
                 event.asset_id.clone(),
                 event.amount.clone().as_u128(),
+                event.outgoing_nonce
             );
             sender.send(TheaMessage::EvmDeposit(deposit))?;
         }

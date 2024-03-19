@@ -21,7 +21,7 @@ async fn main() -> Result<(), RelayerError> {
     let evm_client = Builder::default()
         .chain_url(opt.eth_url)
         .contract_address(opt.thea_contract_address)
-        .seed(opt.seed)
+        .seed(opt.evm_seed)
         .contract(opt.thea_contract)?
         .build()
         .await?;

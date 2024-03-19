@@ -1,6 +1,6 @@
 use crate::traits::{EvmDeposit, ObEvmDeposit, TheaMessage};
 use ethers::utils::{hex, keccak256};
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode, KeyedVec};
 use serde::{Deserialize, Serialize};
 use sp_core::hashing::sha2_256;
 use subxt::config::SubstrateConfig;
@@ -69,7 +69,7 @@ impl SubstrateClient {
         let recipient_add: [u8; 32] = deposit.recipient.try_into().map_err(|_| RelayerError::FailedToConvertAddress)?;
         let recipient_add: AccountId32 = AccountId32::from(recipient_add);
         let deposit = thea_primitives::types::Deposit {
-            id: Default::default(), //TODO: Get unq id from event and put it here
+            id: deposit.outgoing_nonce.encode(),
             recipient: recipient_add,
             asset_id: deposit.asset_id,
             amount: deposit.amount,

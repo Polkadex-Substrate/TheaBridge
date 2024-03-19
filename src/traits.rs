@@ -19,14 +19,16 @@ pub struct EvmDeposit {
     pub(crate) recipient: Vec<u8>,
     pub(crate) asset_id: u128,
     pub(crate) amount: u128,
+    pub(crate) outgoing_nonce: u64
 }
 
 impl EvmDeposit {
-    pub fn new(recipient: Vec<u8>, asset_id: u128, amount: u128) -> Self {
+    pub fn new(recipient: Vec<u8>, asset_id: u128, amount: u128, outgoing_nonce: u64) -> Self {
         Self {
             recipient,
             asset_id,
             amount,
+            outgoing_nonce,
         }
     }
 }

@@ -84,7 +84,6 @@ impl SubstrateClient {
             payload_type: polkadex::runtime_types::thea_primitives::types::PayloadType::L1Deposit,
         };
         let thea_deposit_tx = polkadex::tx().thea().submit_incoming_message(message, 1_100_000_000_000u128);
-        let from = dev::alice(); //TODO: Change it to Signer
         let phrase = "lens secret trick castle amused fresh panel door table merit dance element";
         let mnemonic = Mnemonic::parse(phrase).unwrap();
         let from = subxt_signer::sr25519::Keypair::from_phrase(&mnemonic, None).unwrap();
@@ -111,7 +110,7 @@ impl SubstrateClient {
         //OutgoingNonce
         println!("Subscribing to Withdrawal Events");
         let mut blocks_sub = self.client.blocks().subscribe_finalized().await?;
-        let mut processed_finalised_outgoing_nonce: u64 = 32; //TODO: Should read from local storage
+        let mut processed_finalised_outgoing_nonce: u64 = 104; //TODO: Should read from local storage
         while let Some(block) = blocks_sub.next().await {
             let block = block?;
             let block_hash = block.hash();

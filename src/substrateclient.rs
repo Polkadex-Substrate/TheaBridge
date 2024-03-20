@@ -110,7 +110,7 @@ impl SubstrateClient {
         //OutgoingNonce
         println!("Subscribing to Withdrawal Events");
         let mut blocks_sub = self.client.blocks().subscribe_finalized().await?;
-        let mut processed_finalised_outgoing_nonce: u64 = 105; //TODO: Should read from local storage
+        let mut processed_finalised_outgoing_nonce: u64 = 106; //TODO: Should read from local storage
         while let Some(block) = blocks_sub.next().await {
             let block = block?;
             let block_hash = block.hash();
